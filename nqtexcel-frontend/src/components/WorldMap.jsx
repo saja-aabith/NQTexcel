@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import "./WorldMap.css";
 
 function WorldMap({ compact = false }) {
   const [worlds, setWorlds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredWorld, setHoveredWorld] = useState(null);
 
   // Fixed positions (SVG viewBox 1000x600)
   const worldPositions = useMemo(
@@ -69,20 +70,30 @@ function WorldMap({ compact = false }) {
     return (completed / 10) * 100;
   };
 
-  const getCompletedLevels = (worldNum) => {
-    if (compact) return 0;
+  const getWorldProgressText = (worldNum) => {
+    if (compact) return "Locked";
     const world = worlds.find((w) => w.world === worldNum);
-    if (!world) return 0;
-    return world.levels.filter((l) => l.is_completed).length;
+    if (!world) return "Locked";
+    const completed = world.levels.filter((l) => l.is_completed).length;
+    return `${completed}/10 (${Math.round((completed / 10) * 100)}%)`;
   };
 
+  // ✅ Fix #3:
+  // Previously your world-node IDs could clash with the WORLD SECTION cards below if they also use id="world-1".
+  // Now nodes are "map-world-1" and clicks will scroll to the section card "world-1" if it exists.
   const handleWorldClick = (worldNum) => {
     if (compact) return;
     const status = getWorldStatus(worldNum);
-    if (status !== "locked") {
-      const element = document.getElementById(`world-${worldNum}`);
-      if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (status === "locked") return;
+
+    const sectionEl = document.getElementById(`world-${worldNum}`); // likely your world card below
+    if (sectionEl) {
+      sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
     }
+
+    const nodeEl = document.getElementById(`map-world-${worldNum}`);
+    if (nodeEl) nodeEl.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   // Smooth path through points
@@ -103,40 +114,12 @@ function WorldMap({ compact = false }) {
     return path;
   };
 
-  // Constellation polyline points (straight segments)
-  const constellationPoints = useMemo(() => {
-    return worldPositions.map((p) => `${p.x * 10},${p.y * 6}`).join(" ");
-  }, [worldPositions]);
-
-  // Particles (CSS-only animation; deterministic via memo)
-  const particles = useMemo(() => {
-    const count = compact ? 18 : 44;
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-      // pseudo-random but stable
-      const seed = (i * 9301 + 49297) % 233280;
-      const r1 = (seed / 233280) * 100;
-      const r2 = (((seed * 7) % 233280) / 233280) * 100;
-      const r3 = (((seed * 13) % 233280) / 233280);
-
-      const size = 1 + Math.round(r3 * 3); // 1..4
-      const dur = 10 + Math.round(((seed * 17) % 233280) / 233280 * 18); // 10..28
-      const delay = -Math.round(((seed * 19) % 233280) / 233280 * 30); // negative start
-      const drift = 24 + Math.round(((seed * 23) % 233280) / 233280 * 80); // px
-
-      arr.push({
-        id: i,
-        left: r1,
-        top: r2,
-        size,
-        dur,
-        delay,
-        drift,
-        alpha: 0.35 + (((seed * 29) % 233280) / 233280) * 0.55,
-      });
-    }
-    return arr;
-  }, [compact]);
+  const getTooltipAlignClass = (worldNum) => {
+    // ✅ Fix #1: keep tooltip inside view for edge nodes
+    if (worldNum <= 2) return "tooltip-right";
+    if (worldNum >= 9) return "tooltip-left";
+    return "tooltip-center";
+  };
 
   if (loading && !compact) {
     return (
@@ -156,6 +139,7 @@ function WorldMap({ compact = false }) {
     : worlds.reduce((acc, w) => acc + w.levels.filter((l) => l.is_completed).length, 0);
 
   return (
+    // ✅ Fix #2: separation from the sections below is handled in CSS (margin-bottom + divider)
     <div className={`neo-world-map ${compact ? "compact" : ""}`}>
       {!compact && (
         <div className="map-header">
@@ -179,151 +163,144 @@ function WorldMap({ compact = false }) {
       )}
 
       <div className="map-canvas">
-        {/* bright space layers */}
-        <div className="nebula-layer" />
-        <div className="stars-layer stars-1" />
-        <div className="stars-layer stars-2" />
-        <div className="stars-layer stars-3" />
+        {/* viewport keeps backgrounds clipped, but nodes/tooltips are NOT clipped */}
+        <div className="map-viewport" aria-hidden="true">
+          <div className="nebula-layer" />
+          <div className="stars-layer stars-1" />
+          <div className="stars-layer stars-2" />
+          <div className="stars-layer stars-3" />
+          <div className="streaks-layer" />
+          <div className="scanline-layer" />
+          <div className="noise-layer" />
 
-        {/* NEW: particle field */}
-        <div className="particles-layer" aria-hidden="true">
-          {particles.map((p) => (
-            <span
-              key={p.id}
-              className="particle"
-              style={{
-                left: `${p.left}%`,
-                top: `${p.top}%`,
-                width: `${p.size}px`,
-                height: `${p.size}px`,
-                opacity: p.alpha,
-                "--p-dur": `${p.dur}s`,
-                "--p-delay": `${p.delay}s`,
-                "--p-drift": `${p.drift}px`,
-              }}
+          {/* Curved path */}
+          <svg className="path-svg" viewBox="0 0 1000 600" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.95" />
+                <stop offset="45%" stopColor="#A78BFA" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#34D399" stopOpacity="0.95" />
+              </linearGradient>
+
+              <linearGradient id="pathGlowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.35" />
+                <stop offset="45%" stopColor="#A78BFA" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#34D399" stopOpacity="0.35" />
+              </linearGradient>
+
+              <filter id="glowStrong">
+                <feGaussianBlur stdDeviation="7" result="blur1" />
+                <feGaussianBlur stdDeviation="2" result="blur2" />
+                <feMerge>
+                  <feMergeNode in="blur1" />
+                  <feMergeNode in="blur2" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+
+              <filter id="softGlow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <path
+              d={generatePath()}
+              fill="none"
+              stroke="rgba(255,255,255,0.14)"
+              strokeWidth="10"
+              strokeLinecap="round"
+              className="path-background"
             />
-          ))}
+
+            <path
+              d={generatePath()}
+              fill="none"
+              stroke="url(#pathGlowGradient)"
+              strokeWidth="18"
+              strokeLinecap="round"
+              filter="url(#glowStrong)"
+              className="path-glow"
+            />
+
+            <path
+              d={generatePath()}
+              fill="none"
+              stroke="url(#pathGradient)"
+              strokeWidth="7"
+              strokeLinecap="round"
+              filter="url(#softGlow)"
+              className="main-path"
+            />
+
+            {/* moving highlight dash */}
+            <path
+              d={generatePath()}
+              fill="none"
+              stroke="rgba(255,255,255,0.55)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              className="path-spark"
+            />
+          </svg>
         </div>
 
-        {/* subtle moving streaks */}
-        <div className="streaks-layer" />
-
-        {/* scanlines + film grain */}
-        <div className="scanline-layer" />
-        <div className="noise-layer" />
-
-        {/* Curved path */}
-        <svg className="path-svg" viewBox="0 0 1000 600" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.95" />
-              <stop offset="45%" stopColor="#A78BFA" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#34D399" stopOpacity="0.95" />
-            </linearGradient>
-
-            <linearGradient id="pathGlowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.35" />
-              <stop offset="45%" stopColor="#A78BFA" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#34D399" stopOpacity="0.35" />
-            </linearGradient>
-
-            <filter id="glowStrong">
-              <feGaussianBlur stdDeviation="7" result="blur1" />
-              <feGaussianBlur stdDeviation="2" result="blur2" />
-              <feMerge>
-                <feMergeNode in="blur1" />
-                <feMergeNode in="blur2" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* background path */}
-          <path
-            d={generatePath()}
-            fill="none"
-            stroke="rgba(255,255,255,0.14)"
-            strokeWidth="10"
-            strokeLinecap="round"
-            className="path-background"
-          />
-
-          {/* wide glow */}
-          <path
-            d={generatePath()}
-            fill="none"
-            stroke="url(#pathGlowGradient)"
-            strokeWidth="18"
-            strokeLinecap="round"
-            filter="url(#glowStrong)"
-            className="path-glow"
-          />
-
-          {/* main path */}
-          <path
-            d={generatePath()}
-            fill="none"
-            stroke="url(#pathGradient)"
-            strokeWidth="7"
-            strokeLinecap="round"
-            filter="url(#softGlow)"
-            className="main-path"
-          />
-
-          {/* moving highlight dash */}
-          <path
-            d={generatePath()}
-            fill="none"
-            stroke="rgba(255,255,255,0.55)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            className="path-spark"
-          />
-        </svg>
-
-        {/* NEW: constellation overlay */}
-        {!compact && (
-          <svg className="constellation-svg" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
-            <polyline className="constellation-line" points={constellationPoints} />
-            <polyline className="constellation-glow" points={constellationPoints} />
-            {worldPositions.map((p, idx) => (
-              <circle key={idx} className="constellation-node" cx={p.x * 10} cy={p.y * 6} r={4} />
-            ))}
-          </svg>
-        )}
-
+        {/* Nodes + tooltips (NOT clipped) */}
         <div className="world-nodes">
           {worldPositions.map((pos, index) => {
             const worldNum = index + 1;
             const status = getWorldStatus(worldNum);
             const completion = getCompletionPercentage(worldNum);
-            const completedLevels = getCompletedLevels(worldNum);
             const section = getWorldSection(worldNum);
             const theme = getWorldTheme(worldNum);
 
-            const statusLabel =
-              status === "completed" ? "Completed" : status === "current" ? "In Progress" : "Locked";
+            const showTooltip = !compact && hoveredWorld === worldNum;
 
             return (
               <div
                 key={worldNum}
-                id={`world-${worldNum}`}
+                id={`map-world-${worldNum}`}
                 className={`world-node ${status} ${theme} world-${worldNum}`}
                 onClick={() => handleWorldClick(worldNum)}
+                onMouseEnter={() => setHoveredWorld(worldNum)}
+                onMouseLeave={() => setHoveredWorld(null)}
+                onFocus={() => setHoveredWorld(worldNum)}
+                onBlur={() => setHoveredWorld(null)}
                 style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                 role="button"
                 tabIndex={0}
-                aria-label={`World ${worldNum} - ${section} - ${statusLabel}`}
               >
-                <div className="node-glow" aria-hidden="true"></div>
+                <div className="node-glow" aria-hidden="true" />
+
+                {/* ✅ Fix #1: tooltip is now outside clipped viewport and aligned */}
+                {showTooltip && (
+                  <div className={`world-tooltip ${getTooltipAlignClass(worldNum)}`}>
+                    <div className="tooltip-title">World {worldNum}</div>
+                    <div className="tooltip-row">
+                      <span className="tooltip-label">Section</span>
+                      <span className="tooltip-value">{section}</span>
+                    </div>
+                    <div className="tooltip-row">
+                      <span className="tooltip-label">Status</span>
+                      <span className="tooltip-value">
+                        {status === "current"
+                          ? "In Progress"
+                          : status === "completed"
+                          ? "Completed"
+                          : "Locked"}
+                      </span>
+                    </div>
+                    <div className="tooltip-row">
+                      <span className="tooltip-label">Completion</span>
+                      <span className="tooltip-value">{getWorldProgressText(worldNum)}</span>
+                    </div>
+                    <div className="tooltip-hint">Click to jump to this world.</div>
+                    <div className="tooltip-arrow" />
+                  </div>
+                )}
 
                 <div className="node-content">
                   <div className="node-circle">
@@ -370,34 +347,9 @@ function WorldMap({ compact = false }) {
                   )}
                 </div>
 
-                {/* NEW: tooltip */}
-                {!compact && (
-                  <div className="world-tooltip" role="tooltip">
-                    <div className="tt-title">
-                      <span className={`tt-chip ${theme}`}>{section}</span>
-                      <span className="tt-world">World {worldNum}</span>
-                    </div>
-                    <div className="tt-row">
-                      <span className="tt-key">Status</span>
-                      <span className={`tt-val ${status}`}>{statusLabel}</span>
-                    </div>
-                    <div className="tt-row">
-                      <span className="tt-key">Completion</span>
-                      <span className="tt-val">
-                        {completedLevels}/10 ({Math.round(completion)}%)
-                      </span>
-                    </div>
-                    <div className="tt-hint">
-                      {status === "locked"
-                        ? "Finish the previous world to unlock."
-                        : "Click to jump to this world."}
-                    </div>
-                  </div>
-                )}
-
                 {status === "current" && !compact && (
                   <div className="current-indicator">
-                    <div className="pulse-dot"></div>
+                    <div className="pulse-dot" />
                   </div>
                 )}
               </div>
@@ -422,6 +374,9 @@ function WorldMap({ compact = false }) {
           </div>
         </div>
       )}
+
+      {/* ✅ Fix #2: clear visual gap to the sections below */}
+      {!compact && <div className="map-divider" aria-hidden="true" />}
     </div>
   );
 }
