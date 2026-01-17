@@ -10,12 +10,15 @@ import Profile from './components/Profile';
 import './index.css';
 
 // API Base URL
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5001';
 
 // Auth Context
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
+
+// Configure axios defaults
+axios.defaults.baseURL = API_URL;
 
 // Axios interceptor to add JWT token
 axios.interceptors.request.use(
@@ -31,6 +34,19 @@ axios.interceptors.request.use(
   }
 );
 
+// Axios response interceptor to handle 401 errors
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,24 +57,34 @@ function App() {
     const storedUser = localStorage.getItem('user');
     
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-      fetchUserProfile();
+      try {
+        setUser(JSON.parse(storedUser));
+        fetchUserProfile();
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get(`${API_URL}/user/profile`);
+      const response = await axios.get('/user/profile');
       const updatedUser = response.data;
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
     } catch (error) {
       console.error('Error fetching profile:', error);
+      if (error.response && error.response.status === 401) {
+        logout();
+      }
     }
   };
 
   const login = (userData, token) => {
+    console.log('Login called with token:', token);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);

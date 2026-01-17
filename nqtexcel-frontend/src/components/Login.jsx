@@ -3,7 +3,7 @@ import { useAuth } from '../App';
 import axios from 'axios';
 
 function Login() {
-  const { login, API_URL } = useAuth();
+  const { login } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -58,12 +58,17 @@ function Login() {
         ? { email: formData.email, username: formData.username, password: formData.password }
         : { email: formData.email, password: formData.password };
 
-      const response = await axios.post(`${API_URL}${endpoint}`, payload);
+      console.log('Sending request to:', endpoint);
+      const response = await axios.post(endpoint, payload);
+      console.log('Response:', response.data);
       
       if (response.data.access_token) {
         login(response.data.user, response.data.access_token);
+      } else {
+        setError('No access token received');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.error || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);

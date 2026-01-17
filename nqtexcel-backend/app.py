@@ -13,13 +13,40 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'nqtexcel-super-secret-key-2025'
 app.config['JWT_SECRET_KEY'] = 'jwt-nqtexcel-secret-2025'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Initialize CORS with explicit configuration
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True,
+        "max_age": 3600
+    }
+})
+
 # Initialize extensions
-CORS(app)
 jwt = JWTManager(app)
 db.init_app(app)
+
+# JWT error handlers
+@jwt.unauthorized_loader
+def unauthorized_callback(error):
+    return jsonify({'error': 'Missing Authorization Header'}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({'error': 'Invalid token', 'message': str(error)}), 422
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({'error': 'Token has expired'}), 401
 
 # Database initialization
 with app.app_context():
@@ -71,19 +98,14 @@ with app.app_context():
         db.session.commit()
         print("Dummy users created!")
 
-# Helper function to get difficulty multiplier
+# Helper functions
 def get_difficulty_multiplier(world):
-    # Worlds 1-5 (Verbal): 1.0, 1.2, 1.4, 1.6, 1.8
-    # Worlds 6-10 (Math): 2.0, 2.2, 2.4, 2.6, 2.8
     if world <= 5:
         return 1.0 + (world - 1) * 0.2
     else:
         return 2.0 + (world - 6) * 0.2
 
-# Helper function to get questions per level
 def get_questions_per_level(world):
-    # World 1: 10, World 2: 15, World 3: 20, World 4: 25, World 5: 30
-    # Same for worlds 6-10
     world_adjusted = world if world <= 5 else world - 5
     return 10 + (world_adjusted - 1) * 5
 
@@ -96,7 +118,6 @@ def register():
         username = data.get('username', '').strip()
         password = data.get('password', '')
         
-        # Validation
         if not email or not username or not password:
             return jsonify({'error': 'All fields are required'}), 400
         
@@ -106,14 +127,12 @@ def register():
         if len(password) < 6:
             return jsonify({'error': 'Password must be at least 6 characters'}), 400
         
-        # Check if user exists
         if User.query.filter_by(email=email).first():
             return jsonify({'error': 'Email already registered'}), 400
         
         if User.query.filter_by(username=username).first():
             return jsonify({'error': 'Username already taken'}), 400
         
-        # Create new user
         user = User(
             email=email,
             username=username,
@@ -123,8 +142,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # Create access token
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         
         return jsonify({
             'message': 'Registration successful',
@@ -138,6 +156,8 @@ def register():
         }), 201
         
     except Exception as e:
+        print(f"Registration error: {str(e)}")
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/auth/login', methods=['POST'])
@@ -150,14 +170,14 @@ def login():
         if not email or not password:
             return jsonify({'error': 'Email and password are required'}), 400
         
-        # Find user
         user = User.query.filter_by(email=email).first()
         
         if not user or not check_password_hash(user.password_hash, password):
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        # Create access token
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        
+        print(f"Login successful for user {user.id}, token: {access_token[:20]}...")
         
         return jsonify({
             'message': 'Login successful',
@@ -171,6 +191,7 @@ def login():
         }), 200
         
     except Exception as e:
+        print(f"Login error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # USER ROUTES
@@ -178,17 +199,17 @@ def login():
 @jwt_required()
 def get_profile():
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
+        print(f"Fetching profile for user_id: {user_id}")
+        
         user = User.query.get(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        # Get completed levels
         attempts = Attempt.query.filter_by(user_id=user_id, score=100).all()
         completed_levels = len(attempts)
         
-        # Calculate current world and level
         current_world = 1
         current_level = 1
         
@@ -216,6 +237,9 @@ def get_profile():
         }), 200
         
     except Exception as e:
+        print(f"Profile error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 # WORLD/LEVEL ROUTES
@@ -223,9 +247,9 @@ def get_profile():
 @jwt_required()
 def get_worlds():
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
+        print(f"Fetching worlds for user_id: {user_id}")
         
-        # Get all completed levels for this user
         completed_attempts = Attempt.query.filter_by(user_id=user_id, score=100).all()
         completed_set = {(a.world, a.level) for a in completed_attempts}
         
@@ -237,14 +261,11 @@ def get_worlds():
             for level_num in range(1, 11):
                 is_completed = (world_num, level_num) in completed_set
                 
-                # Check if level is unlocked
                 if level_num == 1 and world_num == 1:
                     is_unlocked = True
                 elif level_num == 1:
-                    # First level of world unlocked if previous world completed
                     is_unlocked = (world_num - 1, 10) in completed_set
                 else:
-                    # Level unlocked if previous level in same world completed
                     is_unlocked = (world_num, level_num - 1) in completed_set
                 
                 levels.append({
@@ -262,19 +283,20 @@ def get_worlds():
         return jsonify({'worlds': worlds}), 200
         
     except Exception as e:
+        print(f"Worlds error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/level/<int:world>/<int:level>', methods=['GET'])
 @jwt_required()
 def get_level(world, level):
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         
-        # Validate world and level
         if world < 1 or world > 10 or level < 1 or level > 10:
             return jsonify({'error': 'Invalid world or level'}), 400
         
-        # Check if level is unlocked
         if level == 1 and world == 1:
             is_unlocked = True
         elif level == 1:
@@ -291,10 +313,7 @@ def get_level(world, level):
         if not is_unlocked:
             return jsonify({'error': 'Level is locked'}), 403
         
-        # Get questions for this level
         section = 'verbal' if world <= 5 else 'math'
-        
-        # Get cumulative questions for this level
         questions_per_level = get_questions_per_level(world)
         total_questions = level * questions_per_level
         
@@ -303,7 +322,6 @@ def get_level(world, level):
             section=section
         ).limit(total_questions).all()
         
-        # Format questions (don't include correct answer)
         formatted_questions = []
         for q in questions:
             formatted_questions.append({
@@ -324,21 +342,22 @@ def get_level(world, level):
         }), 200
         
     except Exception as e:
+        print(f"Get level error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/level/<int:world>/<int:level>/submit', methods=['POST'])
 @jwt_required()
 def submit_level(world, level):
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.json
         user_answers = data.get('user_answers', [])
         
-        # Validate world and level
         if world < 1 or world > 10 or level < 1 or level > 10:
             return jsonify({'error': 'Invalid world or level'}), 400
         
-        # Get questions for this level
         section = 'verbal' if world <= 5 else 'math'
         questions_per_level = get_questions_per_level(world)
         total_questions = level * questions_per_level
@@ -351,7 +370,6 @@ def submit_level(world, level):
         if len(user_answers) != len(questions):
             return jsonify({'error': 'Answer count mismatch'}), 400
         
-        # Calculate score
         correct_count = 0
         for i, question in enumerate(questions):
             if i < len(user_answers) and user_answers[i] == question.correct_answer:
@@ -359,7 +377,6 @@ def submit_level(world, level):
         
         score = (correct_count / len(questions)) * 100 if questions else 0
         
-        # Save attempt
         attempt = Attempt(
             user_id=user_id,
             world=world,
@@ -370,7 +387,6 @@ def submit_level(world, level):
         )
         db.session.add(attempt)
         
-        # If 100%, add XP and unlock next level
         if score == 100:
             user = User.query.get(user_id)
             multiplier = get_difficulty_multiplier(world)
@@ -399,24 +415,22 @@ def submit_level(world, level):
         
     except Exception as e:
         db.session.rollback()
+        print(f"Submit level error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # LEADERBOARD ROUTES
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
     try:
-        # Get top 100 users by XP
         users = User.query.order_by(User.xp.desc()).limit(100).all()
         
         leaderboard = []
         for rank, user in enumerate(users, start=1):
-            # Get completed levels count
             completed_levels = Attempt.query.filter_by(
                 user_id=user.id, 
                 score=100
             ).count()
             
-            # Calculate current world
             attempts = Attempt.query.filter_by(user_id=user.id, score=100).all()
             current_world = 1
             if attempts:
@@ -434,24 +448,7 @@ def get_leaderboard():
         return jsonify({'leaderboard': leaderboard}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ADMIN ROUTES (optional)
-@app.route('/admin/questions', methods=['GET'])
-def get_all_questions():
-    try:
-        questions = Question.query.all()
-        return jsonify({
-            'total': len(questions),
-            'questions': [{
-                'id': q.id,
-                'world': q.world,
-                'level': q.level,
-                'section': q.section,
-                'question_text': q.question_text[:50] + '...'
-            } for q in questions]
-        }), 200
-    except Exception as e:
+        print(f"Leaderboard error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Health check
@@ -460,4 +457,4 @@ def health():
     return jsonify({'status': 'ok'}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001, host='0.0.0.0')

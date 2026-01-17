@@ -17,7 +17,7 @@ function Dashboard() {
 
   const fetchWorlds = async () => {
     try {
-      const response = await axios.get(`${API_URL}/worlds`);
+      const response = await axios.get('/worlds');
       setWorlds(response.data.worlds);
     } catch (err) {
       setError('Failed to load worlds');

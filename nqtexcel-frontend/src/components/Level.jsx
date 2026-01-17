@@ -34,7 +34,7 @@ function Level() {
 
   const fetchLevel = async () => {
     try {
-      const response = await axios.get(`${API_URL}/level/${world}/${level}`);
+      const response = await axios.get(`/level/${world}/${level}`);
       setQuestions(response.data.questions);
       setUserAnswers(new Array(response.data.questions.length).fill(null));
       setLoading(false);
@@ -81,7 +81,7 @@ function Level() {
   const submitLevel = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API_URL}/level/${world}/${level}/submit`, {
+      const response = await axios.post(`/level/${world}/${level}/submit`, {
         user_answers: userAnswers
       });
       
