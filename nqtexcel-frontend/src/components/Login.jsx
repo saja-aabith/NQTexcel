@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../App';
 import axios from 'axios';
+import WorldMap from './WorldMap';
 
 function Login() {
   const { login } = useAuth();
@@ -77,6 +78,10 @@ function Login() {
 
   return (
     <div className="login-container">
+      <div className="login-preview-map">
+        <WorldMap compact={true} />
+      </div>
+      
       <div className="login-box">
         <div className="login-header">
           <h1>NQTexcel</h1>

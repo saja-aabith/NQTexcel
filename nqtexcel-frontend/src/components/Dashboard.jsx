@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import axios from 'axios';
+import WorldMap from './WorldMap';
 
 function Dashboard() {
-  const { user, logout, fetchUserProfile, API_URL } = useAuth();
+  const { user, logout, fetchUserProfile } = useAuth();
   const navigate = useNavigate();
   const [worlds, setWorlds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,9 +87,13 @@ function Dashboard() {
 
         {error && <div className="error-message">{error}</div>}
 
+        <div className="world-map-section">
+          <WorldMap />
+        </div>
+
         <div className="worlds-grid">
           {worlds.map((world) => (
-            <div key={world.world} className="world-card">
+            <div key={world.world} id={`world-${world.world}`} className="world-card">
               <div 
                 className="world-header" 
                 style={{ backgroundColor: getWorldColor(world.world) }}
