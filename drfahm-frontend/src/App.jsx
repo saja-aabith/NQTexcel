@@ -99,7 +99,7 @@ function App() {
   if (loading) {
     return (
       <div className="loading-screen">
-        <h1>Loading NQTexcel...</h1>
+        <h1>Loading DrFahm...</h1>
       </div>
     );
   }

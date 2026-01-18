@@ -10,8 +10,8 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SECRET_KEY'] = 'nqtexcel-super-secret-key-2025'
-app.config['JWT_SECRET_KEY'] = 'jwt-nqtexcel-secret-2025'
+app.config['SECRET_KEY'] = 'drfahm-super-secret-key-2025'
+app.config['JWT_SECRET_KEY'] = 'jwt-drfahm-secret-2025'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 app.config['JWT_TOKEN_LOCATION'] = ['headers']
 app.config['JWT_HEADER_NAME'] = 'Authorization'
@@ -69,7 +69,11 @@ with app.app_context():
             )
             db.session.add(question)
         db.session.commit()
-        print(f"Seeded {len(QUESTIONS_DATA)} questions successfully!")
+        print(f"✅ Seeded {len(QUESTIONS_DATA)} questions successfully!")
+        
+        # Verify World 1 questions
+        world1_count = Question.query.filter_by(world=1).count()
+        print(f"✅ World 1 has {world1_count} questions (should be 100)")
     
     # Create some dummy users for leaderboard
     if User.query.count() == 0:
@@ -96,7 +100,7 @@ with app.app_context():
             )
             db.session.add(user)
         db.session.commit()
-        print("Dummy users created!")
+        print("✅ Dummy users created!")
 
 # Helper functions
 def get_difficulty_multiplier(world):
@@ -454,7 +458,9 @@ def get_leaderboard():
 # Health check
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'ok'}), 200
+    return jsonify({'status': 'ok', 'app': 'DrFahm API'}), 200
 
 if __name__ == '__main__':
+    print("Starting DrFahm API Server...")
+    print("Backend running on http://localhost:5001")
     app.run(debug=True, port=5001, host='0.0.0.0')

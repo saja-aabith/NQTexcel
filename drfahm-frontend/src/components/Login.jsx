@@ -84,7 +84,8 @@ function Login() {
       
       <div className="login-box">
         <div className="login-header">
-          <h1>NQTexcel</h1>
+          <h1>DrFahm</h1>
+          <p>Master QUDURAT, NAFS & TAHSILI</p>
         </div>
 
         <div className="login-tabs">

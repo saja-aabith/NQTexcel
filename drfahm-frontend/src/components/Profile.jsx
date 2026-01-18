@@ -24,7 +24,7 @@ function Profile() {
     <div className="profile-container">
       <nav className="navbar">
         <div className="navbar-left">
-          <h1>NQTexcel</h1>
+          <h1>DrFahm</h1>
         </div>
         <div className="navbar-right">
           <button onClick={() => navigate('/dashboard')} className="btn-nav">Dashboard</button>
@@ -44,7 +44,6 @@ function Profile() {
 
         <div className="profile-stats">
           <div className="stat-card">
-            <div className="stat-icon">⭐</div>
             <div className="stat-info">
               <span className="stat-value">{user.xp || 0}</span>
               <span className="stat-label">Total XP</span>
@@ -52,7 +51,6 @@ function Profile() {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">✅</div>
             <div className="stat-info">
               <span className="stat-value">{user.completed_levels || 0}</span>
               <span className="stat-label">Levels Completed</span>
@@ -60,7 +58,6 @@ function Profile() {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">🌍</div>
             <div className="stat-info">
               <span className="stat-value">World {user.current_world || 1}</span>
               <span className="stat-label">Current World</span>
@@ -68,7 +65,6 @@ function Profile() {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">📈</div>
             <div className="stat-info">
               <span className="stat-value">Level {user.current_level || 1}</span>
               <span className="stat-label">Current Level</span>

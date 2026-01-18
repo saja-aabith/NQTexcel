@@ -52,7 +52,7 @@ function Leaderboard() {
     <div className="leaderboard-container">
       <nav className="navbar">
         <div className="navbar-left">
-          <h1>NQTexcel</h1>
+          <h1>DrFahm</h1>
         </div>
         <div className="navbar-right">
           <button onClick={() => navigate('/dashboard')} className="btn-nav">Dashboard</button>

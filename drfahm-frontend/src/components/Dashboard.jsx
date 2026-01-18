@@ -68,7 +68,7 @@ function Dashboard() {
     <div className="dashboard">
       <nav className="navbar">
         <div className="navbar-left">
-          <h1>NQTexcel</h1>
+          <h1>DrFahm</h1>
         </div>
         <div className="navbar-right">
           <span className="user-info">Hello, {user?.username}</span>
