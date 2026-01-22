@@ -1,221 +1,166 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
 
-// Public / Marketing pages
+// Import global styles
+import './styles/variables.css';
+import './styles/components.css';
+
+// Marketing Pages
 import HomePage from './components/HomePage';
-import AboutPage from './components/AboutPage';
-import ContactPage from './components/ContactPage';
-import FAQPage from './components/FAQPage';
+import StartPage from './components/StartPage';
 import HowItWorksPage from './components/HowItWorksPage';
-import PricingPage from './components/PricingPage';
-import SchoolsPage from './components/SchoolsPage';
-import NAFSPage from './components/NAFSPage';
 import QuduratPage from './components/QuduratPage';
 import TahsiliPage from './components/TahsiliPage';
-import WorldMap from './components/WorldMap';
+import NAFSPage from './components/NAFSPage';
+import SchoolsPage from './components/SchoolsPage';
+import PricingPage from './components/PricingPage';
+import FAQPage from './components/FAQPage';
+import AboutPage from './components/AboutPage';
+import ContactPage from './components/ContactPage';
 
-// Auth + App pages
-import Login from './components/Login';
-import StartPage from './components/StartPage';
-import Dashboard from './components/Dashboard';
-import Level from './components/Level';
-import LevelComplete from './components/LevelComplete';
-import Leaderboard from './components/Leaderboard';
-import Profile from './components/Profile';
+// Application Pages (to be created)
+// import LoginPage from './components/LoginPage';
+// import RegisterPage from './components/RegisterPage';
+// import Dashboard from './components/Dashboard';
+// import DiagnosticPage from './components/DiagnosticPage';
+// import PracticePage from './components/PracticePage';
+// import ProgressPage from './components/ProgressPage';
+// import SettingsPage from './components/SettingsPage';
 
-import './index.css';
-
-// API Base URL
-const API_URL = 'http://localhost:5001';
-
-// Auth Context
-const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
-
-// Configure axios defaults (base URL)
-axios.defaults.baseURL = API_URL;
-
-// Axios interceptor to add JWT token
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Axios response interceptor to handle 401 errors
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Simple route guards
-function ProtectedRoute({ user, children }) {
-  return user ? children : <Navigate to="/" replace />;
+// 404 Not Found Component
+function NotFound() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--navy-950)',
+      color: 'var(--text-primary)',
+      textAlign: 'center',
+      padding: '40px'
+    }}>
+      <div>
+        <h1 style={{ 
+          fontSize: '72px', 
+          fontWeight: 'var(--font-weight-black)',
+          marginBottom: '16px',
+          color: 'var(--accent-primary)'
+        }}>
+          404
+        </h1>
+        <p style={{ 
+          fontSize: '24px',
+          marginBottom: '32px',
+          color: 'var(--text-secondary)'
+        }}>
+          Page not found
+        </p>
+        <a 
+          href="/"
+          style={{
+            display: 'inline-block',
+            padding: '14px 32px',
+            background: 'var(--accent-primary)',
+            color: '#FFFFFF',
+            textDecoration: 'none',
+            borderRadius: 'var(--radius-lg)',
+            fontWeight: 'var(--font-weight-semibold)',
+            transition: 'var(--transition)'
+          }}
+        >
+          Return Home
+        </a>
+      </div>
+    </div>
+  );
 }
 
-function PublicOnlyRoute({ user, children, redirectTo = '/dashboard' }) {
-  return !user ? children : <Navigate to={redirectTo} replace />;
+// Temporary placeholder for application pages that haven't been created yet
+function ComingSoon({ pageName }) {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--navy-950)',
+      color: 'var(--text-primary)',
+      textAlign: 'center',
+      padding: '40px'
+    }}>
+      <div>
+        <h1 style={{ 
+          fontSize: '48px', 
+          fontWeight: 'var(--font-weight-black)',
+          marginBottom: '16px'
+        }}>
+          {pageName}
+        </h1>
+        <p style={{ 
+          fontSize: '18px',
+          marginBottom: '32px',
+          color: 'var(--text-secondary)'
+        }}>
+          This page is currently under development.
+        </p>
+        <a 
+          href="/"
+          style={{
+            display: 'inline-block',
+            padding: '14px 32px',
+            background: 'var(--accent-primary)',
+            color: '#FFFFFF',
+            textDecoration: 'none',
+            borderRadius: 'var(--radius-lg)',
+            fontWeight: 'var(--font-weight-semibold)',
+            transition: 'var(--transition)'
+          }}
+        >
+          Return Home
+        </a>
+      </div>
+    </div>
+  );
 }
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await axios.get('/user/profile');
-      const updatedUser = response.data;
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      if (error?.response?.status === 401) logout();
-    }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (token && storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUser(parsed);
-        fetchUserProfile();
-      } catch (e) {
-        console.error('Error parsing stored user:', e);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-    }
-
-    setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const login = (userData, token) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-  };
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <h1>Loading DrFahm...</h1>
-      </div>
-    );
-  }
-
   return (
-    <AuthContext.Provider value={{ user, login, logout, fetchUserProfile, API_URL }}>
-      <Router>
-        <Routes>
-          {/* =========================
-              Public / Marketing Routes
-              ========================= */}
-          <Route
-            path="/"
-            element={!user ? <HomePage /> : <Navigate to="/dashboard" replace />}
-          />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/schools" element={<SchoolsPage />} />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route path="/contact" element={<ContactPage />} />
+    <Router>
+      <Routes>
+        {/* Marketing Pages - Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/start" element={<StartPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
+        
+        {/* Exam-Specific Pages */}
+        <Route path="/qudurat" element={<QuduratPage />} />
+        <Route path="/tahsili" element={<TahsiliPage />} />
+        <Route path="/nafs" element={<NAFSPage />} />
+        
+        {/* Information Pages */}
+        <Route path="/schools" element={<SchoolsPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
-          {/* Exam info / marketing pages (public) */}
-          <Route path="/nafs" element={<NAFSPage />} />
-          <Route path="/qudurat" element={<QuduratPage />} />
-          <Route path="/tahsili" element={<TahsiliPage />} />
+        {/* Application Pages - To Be Implemented */}
+        <Route path="/login" element={<ComingSoon pageName="Login" />} />
+        <Route path="/register" element={<ComingSoon pageName="Register" />} />
+        <Route path="/dashboard" element={<ComingSoon pageName="Dashboard" />} />
+        <Route path="/diagnostic" element={<ComingSoon pageName="Diagnostic Assessment" />} />
+        <Route path="/practice" element={<ComingSoon pageName="Practice" />} />
+        <Route path="/progress" element={<ComingSoon pageName="Progress" />} />
+        <Route path="/settings" element={<ComingSoon pageName="Settings" />} />
 
-          {/* Map page (public unless you want to lock it) */}
-          <Route path="/world-map" element={<WorldMap />} />
+        {/* Legacy route - redirect from old name */}
+        <Route path="/nqtexcel" element={<Navigate to="/" replace />} />
 
-          {/* Auth */}
-          <Route
-            path="/login"
-            element={
-              <PublicOnlyRoute user={user}>
-                <Login />
-              </PublicOnlyRoute>
-            }
-          />
-
-          {/* Optional start page (public) */}
-          <Route path="/start" element={<StartPage />} />
-
-          {/* =========================
-              Protected / App Routes
-              ========================= */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute user={user}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/level/:world/:level"
-            element={
-              <ProtectedRoute user={user}>
-                <Level />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/level-complete"
-            element={
-              <ProtectedRoute user={user}>
-                <LevelComplete />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/leaderboard"
-            element={
-              <ProtectedRoute user={user}>
-                <Leaderboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute user={user}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthContext.Provider>
+        {/* 404 - Catch all unmatched routes */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }
 
