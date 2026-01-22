@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Import global styles
 import './styles/variables.css';
@@ -18,9 +19,11 @@ import FAQPage from './components/FAQPage';
 import AboutPage from './components/AboutPage';
 import ContactPage from './components/ContactPage';
 
+// Application Pages
+import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
+
 // Application Pages (to be created)
-// import LoginPage from './components/LoginPage';
-// import RegisterPage from './components/RegisterPage';
 // import Dashboard from './components/Dashboard';
 // import DiagnosticPage from './components/DiagnosticPage';
 // import PracticePage from './components/PracticePage';
@@ -127,39 +130,43 @@ function ComingSoon({ pageName }) {
 function App() {
   return (
     <Router>
-      <Routes>
-        {/* Marketing Pages - Public Routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/start" element={<StartPage />} />
-        <Route path="/how-it-works" element={<HowItWorksPage />} />
-        
-        {/* Exam-Specific Pages */}
-        <Route path="/qudurat" element={<QuduratPage />} />
-        <Route path="/tahsili" element={<TahsiliPage />} />
-        <Route path="/nafs" element={<NAFSPage />} />
-        
-        {/* Information Pages */}
-        <Route path="/schools" element={<SchoolsPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
+      <AuthProvider>
+        <Routes>
+          {/* Marketing Pages - Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/start" element={<StartPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          
+          {/* Exam-Specific Pages */}
+          <Route path="/qudurat" element={<QuduratPage />} />
+          <Route path="/tahsili" element={<TahsiliPage />} />
+          <Route path="/nafs" element={<NAFSPage />} />
+          
+          {/* Information Pages */}
+          <Route path="/schools" element={<SchoolsPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
-        {/* Application Pages - To Be Implemented */}
-        <Route path="/login" element={<ComingSoon pageName="Login" />} />
-        <Route path="/register" element={<ComingSoon pageName="Register" />} />
-        <Route path="/dashboard" element={<ComingSoon pageName="Dashboard" />} />
-        <Route path="/diagnostic" element={<ComingSoon pageName="Diagnostic Assessment" />} />
-        <Route path="/practice" element={<ComingSoon pageName="Practice" />} />
-        <Route path="/progress" element={<ComingSoon pageName="Progress" />} />
-        <Route path="/settings" element={<ComingSoon pageName="Settings" />} />
+          {/* Application Pages */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* Application Pages - To Be Implemented */}
+          <Route path="/dashboard" element={<ComingSoon pageName="Dashboard" />} />
+          <Route path="/diagnostic" element={<ComingSoon pageName="Diagnostic Assessment" />} />
+          <Route path="/practice" element={<ComingSoon pageName="Practice" />} />
+          <Route path="/progress" element={<ComingSoon pageName="Progress" />} />
+          <Route path="/settings" element={<ComingSoon pageName="Settings" />} />
 
-        {/* Legacy route - redirect from old name */}
-        <Route path="/nqtexcel" element={<Navigate to="/" replace />} />
+          {/* Legacy route - redirect from old name */}
+          <Route path="/nqtexcel" element={<Navigate to="/" replace />} />
 
-        {/* 404 - Catch all unmatched routes */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* 404 - Catch all unmatched routes */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }
