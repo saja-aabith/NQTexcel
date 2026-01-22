@@ -11,7 +11,7 @@ DrFahm provides a comprehensive REST API for managing users, questions, progress
 ### 1. Create Virtual Environment
 
 ```bash
-cd nqtexcel-backend
+cd drfahm-backend
 python -m venv venv
 ```
 

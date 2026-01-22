@@ -11,7 +11,7 @@ DrFahm is a comprehensive exam preparation platform designed specifically for Sa
 ### 1. Install Dependencies
 
 ```bash
-cd nqtexcel-frontend
+cd drfahm-frontend
 npm install
 ```
 
