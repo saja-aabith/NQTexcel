@@ -8,6 +8,7 @@ import Level from './components/Level';
 import LevelComplete from './components/LevelComplete';
 import Leaderboard from './components/Leaderboard';
 import Profile from './components/Profile';
+import StartPage from './components/StartPage';
 import './index.css';
 
 // API Base URL
@@ -121,6 +122,8 @@ function App() {
             element={!user ? <Login /> : <Navigate to="/dashboard" />} 
           />
           
+          <Route path="/start" element={<StartPage />} />
+
           {/* Dashboard */}
           <Route 
             path="/dashboard" 
