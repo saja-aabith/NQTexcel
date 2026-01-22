@@ -472,55 +472,130 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ==================== FOOTER ==================== */}
-      <footer className="footer-institutional">
-        <div className="footer-container">
-          <div className="footer-grid">
-            <div className="footer-brand">
-              <h3>Dr Fahm</h3>
-              <p>National Assessment & Readiness Platform</p>
-              <p className="footer-tagline">
-                Designed for the Saudi education system. Built for clarity and readiness.
-              </p>
-            </div>
-
-            <div className="footer-links">
-              <h4>Assessments</h4>
-              <ul>
-                <li><a href="#qudurat">Qudurat</a></li>
-                <li><a href="#tahsili">Tahsili</a></li>
-                <li><a href="#nafs">NAFS</a></li>
-              </ul>
-            </div>
-
-            <div className="footer-links">
-              <h4>Platform</h4>
-              <ul>
-                <li><a href="#for-schools" onClick={(e) => { e.preventDefault(); scrollToSection('for-schools'); }}>For Schools</a></li>
-                <li><a href="#about">About Dr Fahm</a></li>
-                <li><a href="mailto:info@drfahm.com">Contact</a></li>
-              </ul>
-            </div>
-
-            <div className="footer-links">
-              <h4>Legal</h4>
-              <ul>
-                <li><a href="#privacy">Privacy Policy</a></li>
-                <li><a href="#terms">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <p>&copy; 2025 Dr Fahm. All rights reserved.</p>
-            <div className="footer-meta">
-              <span>Built for Saudi Arabia</span>
-              <span className="footer-separator">•</span>
-              <span>Aligned with Vision 2030</span>
-            </div>
-          </div>
+    {/* ==================== FOOTER ==================== */}
+    <footer className="footer-institutional">
+    <div className="footer-container">
+        <div className="footer-grid">
+        <div className="footer-brand">
+            <h3>Dr Fahm</h3>
+            <p>National Assessment & Readiness Platform</p>
+            <p className="footer-tagline">
+            Designed for the Saudi education system. Built for clarity and readiness.
+            </p>
         </div>
-      </footer>
+
+        <div className="footer-links">
+            <h4>Assessments</h4>
+            <ul>
+            <li>
+                <a
+                href="/qudurat"
+                onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/qudurat');
+                }}
+                >
+                Qudurat
+                </a>
+            </li>
+            <li>
+                <a
+                href="/tahsili"
+                onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/tahsili');
+                }}
+                >
+                Tahsili
+                </a>
+            </li>
+            <li>
+                <a
+                href="/nafs"
+                onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/nafs');
+                }}
+                >
+                NAFS
+                </a>
+            </li>
+            </ul>
+        </div>
+
+        <div className="footer-links">
+            <h4>Platform</h4>
+            <ul>
+            <li>
+                <a
+                href="#for-schools"
+                onClick={(e) => {
+                    e.preventDefault();
+                    scrollToSection('for-schools');
+                }}
+                >
+                For Schools
+                </a>
+            </li>
+
+            {/* If you have /about route, do this: */}
+            <li>
+                <a
+                href="/about"
+                onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/about');
+                }}
+                >
+                About Dr Fahm
+                </a>
+            </li>
+
+            <li><a href="mailto:info@drfahm.com">Contact</a></li>
+            </ul>
+        </div>
+
+        <div className="footer-links">
+            <h4>Legal</h4>
+            <ul>
+            {/* If you have real routes, use navigate. If not, keep as placeholders. */}
+            <li>
+                <a
+                href="/privacy"
+                onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/privacy');
+                }}
+                >
+                Privacy Policy
+                </a>
+            </li>
+            <li>
+                <a
+                href="/terms"
+                onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/terms');
+                }}
+                >
+                Terms of Service
+                </a>
+            </li>
+            </ul>
+        </div>
+        </div>
+
+        <div className="footer-bottom">
+        <p>&copy; 2025 Dr Fahm. All rights reserved.</p>
+        <div className="footer-meta">
+            <span>Built for Saudi Arabia</span>
+            <span className="footer-separator">•</span>
+            <span>Aligned with Vision 2030</span>
+        </div>
+        </div>
+    </div>
+    </footer>
+
     </div>
   );
 }
