@@ -16,9 +16,6 @@ function TahsiliPage() {
           </div>
           
           <div className="nav-actions">
-            <button onClick={() => navigate('/schools')} className="btn-nav-secondary">
-              For Schools
-            </button>
             <button onClick={() => navigate('/login')} className="btn-nav-primary">
               Login / Sign Up
             </button>

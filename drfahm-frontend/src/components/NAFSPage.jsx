@@ -16,9 +16,6 @@ function NAFSPage() {
           </div>
           
           <div className="nav-actions">
-            <button onClick={() => navigate('/schools')} className="btn-nav-secondary">
-              For Schools
-            </button>
             <button onClick={() => navigate('/login')} className="btn-nav-primary">
               Login / Sign Up
             </button>
@@ -429,7 +426,7 @@ function NAFSPage() {
           <div className="footer-simple">
             <div className="footer-brand">
               <h3>Dr Fahm</h3>
-              <p>National Assessment & Readiness Platform</p>
+              <p>The Blueprint for 100%</p>
             </div>
 
             <nav className="footer-links-inline">
@@ -443,7 +440,7 @@ function NAFSPage() {
           </div>
 
           <div className="footer-bottom">
-            <p>&copy; 2025 Dr Fahm. All rights reserved.</p>
+            <p>&copy; 2026 Dr Fahm. All rights reserved.</p>
           </div>
         </div>
       </footer>
