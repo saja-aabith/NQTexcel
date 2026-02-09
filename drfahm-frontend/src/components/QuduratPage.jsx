@@ -12,7 +12,7 @@ function QuduratPage() {
         <div className="nav-container">
           <div className="nav-brand" onClick={() => navigate('/')}>
             <h1>Dr Fahm</h1>
-            <span className="nav-subtitle">National Assessment & Readiness Platform</span>
+            <span className="nav-subtitle">The Blueprint for 100%</span>
           </div>
           
           <div className="nav-actions">
